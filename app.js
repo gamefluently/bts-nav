@@ -1,49 +1,88 @@
-const fromSelect = document.getElementById('fromSelect');
-const toSelect = document.getElementById('toSelect');
-const swapBtn = document.getElementById('swapBtn');
 const goBtn = document.getElementById('goBtn');
 const results = document.getElementById('results');
+const lineStrip = document.getElementById('lineStrip');
+const pickerReadout = document.getElementById('pickerReadout');
+
+// Selection state: null, or a station key. Tap flow:
+// nothing selected -> tap sets FROM
+// FROM selected -> tap a different station sets TO
+// both selected -> tap any station restarts selection from that station
+let fromKey = null;
+let toKey = null;
+
+function renderReadout() {
+  function stopHtml(key, placeholder) {
+    if (!key) return `<div class="readout-placeholder">${placeholder}</div>`;
+    const s = STATIONS[key];
+    return `
+      <div class="readout-stop">
+        <span class="readout-code" style="color:${s.interchange ? 'var(--gold)' : 'var(--green)'}">${s.code}</span>
+        <span class="readout-name">${s.name}</span>
+      </div>
+    `;
+  }
+  pickerReadout.innerHTML = `
+    ${stopHtml(fromKey, 'Start station')}
+    <span class="readout-arrow">→</span>
+    ${stopHtml(toKey, 'Destination')}
+  `;
+}
 
 function renderLineStrip() {
-  const strip = document.getElementById('lineStrip');
-  if (!strip) return;
-  strip.innerHTML = LINE_ORDER.map(key => {
+  const fromIdx = fromKey ? LINE_ORDER.indexOf(fromKey) : -1;
+  const toIdx = toKey ? LINE_ORDER.indexOf(toKey) : -1;
+  const lo = fromIdx > -1 && toIdx > -1 ? Math.min(fromIdx, toIdx) : -1;
+  const hi = fromIdx > -1 && toIdx > -1 ? Math.max(fromIdx, toIdx) : -1;
+
+  lineStrip.innerHTML = LINE_ORDER.map((key, idx) => {
     const s = STATIONS[key];
     const isInterchange = !!s.interchange;
+    const isSelected = key === fromKey || key === toKey;
+    const onRoute = lo > -1 && idx >= lo && idx <= hi;
+    const trackInRange = lo > -1 && idx > lo && idx <= hi;
+
     return `
-      <div class="strip-stop ${isInterchange ? 'interchange' : ''}">
+      <div class="strip-stop ${isInterchange ? 'interchange' : ''} ${isSelected ? 'selected' : ''} ${onRoute ? 'on-route' : ''}" data-key="${key}">
+        <div class="strip-track ${trackInRange ? 'in-range' : ''}"></div>
         <div class="strip-dot"></div>
         <div class="strip-code">${s.code}</div>
         <div class="strip-name">${s.name}</div>
       </div>
     `;
   }).join('');
+
+  lineStrip.querySelectorAll('.strip-stop').forEach(el => {
+    el.addEventListener('click', () => handleStopTap(el.dataset.key));
+  });
 }
 
-function populateSelects() {
-  LINE_ORDER.forEach(key => {
-    const station = STATIONS[key];
-    const label = `${station.code} · ${station.name}`;
+function handleStopTap(key) {
+  if (!fromKey || (fromKey && toKey)) {
+    // Nothing selected, or both already selected -> start fresh
+    fromKey = key;
+    toKey = null;
+  } else if (key === fromKey) {
+    // Tapped the same station again -> deselect
+    fromKey = null;
+  } else {
+    toKey = key;
+  }
+  renderReadout();
+  renderLineStrip();
+  updateGoButton();
+  results.innerHTML = '';
+  if (!fromKey && !toKey) renderEmpty();
+}
 
-    const opt1 = document.createElement('option');
-    opt1.value = key;
-    opt1.textContent = label;
-    fromSelect.appendChild(opt1);
-
-    const opt2 = document.createElement('option');
-    opt2.value = key;
-    opt2.textContent = label;
-    toSelect.appendChild(opt2);
-  });
-  fromSelect.value = 'nana';
-  toSelect.value = 'siam';
+function updateGoButton() {
+  goBtn.disabled = !(fromKey && toKey);
 }
 
 function renderEmpty() {
   results.innerHTML = `
     <div class="empty-state">
       <div class="display">Pick two stations</div>
-      <div>Routes cover Siam, Chit Lom, Phloen Chit, Nana, and Asok.</div>
+      <div>Tap on the line above to choose your route.</div>
     </div>
   `;
 }
@@ -79,8 +118,8 @@ function renderInterchangeDiagram(station) {
   `;
 }
 
-function renderRoute(fromKey, toKey) {
-  if (fromKey === toKey) {
+function renderRoute(fk, tk) {
+  if (fk === tk) {
     results.innerHTML = `
       <div class="empty-state">
         <div class="display">Same station selected</div>
@@ -90,29 +129,21 @@ function renderRoute(fromKey, toKey) {
     return;
   }
 
-  const route = getRoute(fromKey, toKey);
-  if (!route) {
-    renderEmpty();
-    return;
-  }
+  const route = getRoute(fk, tk);
+  if (!route) { renderEmpty(); return; }
 
   const { from, to, steps, segment } = route;
-
   let html = '';
 
-  // Meta pills
   html += `<div class="meta-row">`;
-  html += `<span class="pill train">${from.line.split('+')[0].trim()} Line</span>`;
+  html += `<span class="pill primary">${from.line.split('+')[0].trim()} Line</span>`;
   html += `<span class="pill">${from.code} → ${to.code}</span>`;
   if (segment) {
     html += `<span class="pill">${segment.walkMinutes} min walk equiv.</span>`;
-    if (segment.recommendTrain) {
-      html += `<span class="pill">Train recommended</span>`;
-    }
+    if (segment.recommendTrain) html += `<span class="pill advisory">Train recommended</span>`;
   }
   html += `</div>`;
 
-  // Route steps
   html += `<div class="route-line">`;
   steps.forEach(step => {
     const cls = step.type === 'transfer' ? 'transfer' : (step.type === 'alert' ? 'alert' : '');
@@ -125,23 +156,17 @@ function renderRoute(fromKey, toKey) {
   });
   html += `</div>`;
 
-  // Siam interchange diagram if relevant to this route
   if (from.interchange) html += renderInterchangeDiagram(from);
-  if (to.interchange && fromKey !== 'siam') html += renderInterchangeDiagram(to);
+  if (to.interchange && fk !== 'siam') html += renderInterchangeDiagram(to);
 
   results.innerHTML = html;
 }
 
-populateSelects();
+renderReadout();
 renderLineStrip();
 renderEmpty();
+updateGoButton();
 
 goBtn.addEventListener('click', () => {
-  renderRoute(fromSelect.value, toSelect.value);
-});
-
-swapBtn.addEventListener('click', () => {
-  const temp = fromSelect.value;
-  fromSelect.value = toSelect.value;
-  toSelect.value = temp;
+  if (fromKey && toKey) renderRoute(fromKey, toKey);
 });
