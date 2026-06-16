@@ -4,17 +4,33 @@ const swapBtn = document.getElementById('swapBtn');
 const goBtn = document.getElementById('goBtn');
 const results = document.getElementById('results');
 
-function populateSelects() {
-  const keys = Object.keys(STATIONS);
-  keys.forEach(key => {
+function renderLineStrip() {
+  const strip = document.getElementById('lineStrip');
+  if (!strip) return;
+  strip.innerHTML = LINE_ORDER.map(key => {
+    const s = STATIONS[key];
+    const isInterchange = !!s.interchange;
+    return `
+      <div class="strip-stop ${isInterchange ? 'interchange' : ''}">
+        <div class="strip-dot"></div>
+        <div class="strip-code">${s.code}</div>
+        <div class="strip-name">${s.name}</div>
+      </div>
+    `;
+  }).join('');
+}
+  LINE_ORDER.forEach(key => {
+    const station = STATIONS[key];
+    const label = `${station.code} · ${station.name}`;
+
     const opt1 = document.createElement('option');
     opt1.value = key;
-    opt1.textContent = STATIONS[key].name;
+    opt1.textContent = label;
     fromSelect.appendChild(opt1);
 
     const opt2 = document.createElement('option');
     opt2.value = key;
-    opt2.textContent = STATIONS[key].name;
+    opt2.textContent = label;
     toSelect.appendChild(opt2);
   });
   fromSelect.value = 'nana';
@@ -25,7 +41,7 @@ function renderEmpty() {
   results.innerHTML = `
     <div class="empty-state">
       <div class="display">Pick two stations</div>
-      <div>Routes cover Nana, Asok, and Siam for now.</div>
+      <div>Routes cover Siam, Chit Lom, Phloen Chit, Nana, and Asok.</div>
     </div>
   `;
 }
@@ -87,8 +103,9 @@ function renderRoute(fromKey, toKey) {
   // Meta pills
   html += `<div class="meta-row">`;
   html += `<span class="pill train">${from.line.split('+')[0].trim()} Line</span>`;
+  html += `<span class="pill">${from.code} → ${to.code}</span>`;
   if (segment) {
-    html += `<span class="pill">${segment.walkMinutes} min total</span>`;
+    html += `<span class="pill">${segment.walkMinutes} min walk equiv.</span>`;
     if (segment.recommendTrain) {
       html += `<span class="pill">Train recommended</span>`;
     }
@@ -116,6 +133,7 @@ function renderRoute(fromKey, toKey) {
 }
 
 populateSelects();
+renderLineStrip();
 renderEmpty();
 
 goBtn.addEventListener('click', () => {
