@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Skywalk — BTS Pedestrian Nav</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e17;
+    --surface: #1a2332;
+    --surface-2: #222e42;
+    --green: #1ba94c;
+    --gold: #f2a900;
+    --text: #e8eaed;
+    --text-dim: #8b96a8;
+    --red: #ff4d4d;
+    --border: #2a3850;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    height: 100%;
+  }
+
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .display {
+    font-family: 'Archivo', 'Inter', sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  header {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+
+  header .eyebrow {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--green);
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  header h1 {
+    font-size: 24px;
+    line-height: 1.1;
+  }
+
+  main {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .picker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  select {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 14px 12px;
+    border-radius: 10px;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .swap-btn {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--gold);
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .go-btn {
+    width: 100%;
+    background: var(--green);
+    color: #051208;
+    border: none;
+    font-family: 'Archivo', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.02em;
+    padding: 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-bottom: 28px;
+  }
+  .go-btn:active { transform: scale(0.98); }
+
+  /* Route line diagram */
+  .route-line {
+    position: relative;
+    padding-left: 28px;
+    margin-bottom: 24px;
+  }
+
+  .route-line::before {
+    content: '';
+    position: absolute;
+    left: 8px;
+    top: 6px;
+    bottom: 6px;
+    width: 3px;
+    background: var(--green);
+    border-radius: 2px;
+  }
+
+  .step {
+    position: relative;
+    padding-bottom: 24px;
+  }
+  .step:last-child { padding-bottom: 0; }
+
+  .step::before {
+    content: '';
+    position: absolute;
+    left: -28px;
+    top: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 3px solid var(--green);
+  }
+
+  .step.transfer::before { border-color: var(--gold); }
+  .step.alert::before { border-color: var(--red); }
+
+  .step-title {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+
+  .step.transfer .step-title { color: var(--gold); }
+
+  .step-detail {
+    font-size: 14px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .meta-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+  }
+
+  .pill.train { color: var(--green); border-color: var(--green); }
+
+  /* Siam interchange diagram — signature element */
+  .interchange-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 24px;
+  }
+
+  .interchange-card .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .levels {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 14px 0;
+  }
+
+  .level-row {
+    padding: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .level-row:last-child { border-bottom: none; }
+
+  .level-row .level-tag {
+    display: inline-block;
+    font-family: 'Archivo', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    background: var(--surface-2);
+    padding: 3px 9px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+  }
+
+  .level-row.upper .level-tag { color: var(--green); }
+  .level-row.lower .level-tag { color: var(--gold); }
+
+  .level-row p {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .key-rule {
+    background: rgba(255, 77, 77, 0.08);
+    border: 1px solid rgba(255, 77, 77, 0.3);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #ffb3b3;
+  }
+
+  .key-rule strong { color: var(--red); }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+  }
+
+  .empty-state .display {
+    font-size: 18px;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  footer {
+    text-align: center;
+    padding: 24px 20px 40px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Sukhumvit Line · Personal build</div>
+  <h1 class="display">Skywalk</h1>
+</header>
+
+<main>
+  <div class="picker">
+    <select id="fromSelect"></select>
+    <div class="swap-btn" id="swapBtn">⇄</div>
+    <select id="toSelect"></select>
+  </div>
+
+  <button class="go-btn" id="goBtn">GET ROUTE</button>
+
+  <div id="results"></div>
+</main>
+
+<footer>Nana · Asok · Siam — built for personal use</footer>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
