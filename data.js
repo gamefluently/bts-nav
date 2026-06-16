@@ -22,23 +22,22 @@ const STATIONS = {
     skywalkNote: "Siam has the most extensive skywalk web on the network — covered bridges run directly into Paragon, Siam Discovery, and across to Central World/Centara. You can reach all of these without touching street level.",
     interchange: {
       type: "stacked-by-direction",
-      summary: "Siam is the ONLY interchange between the Sukhumvit and Silom lines, and its layout is the single most confusing point on the network: the two platform levels are split by DIRECTION, not by LINE.",
+      headline: "Level = direction, not line",
       levels: [
         {
           level: 4,
-          label: "Upper platform (Level 4)",
-          serves: "Northbound: trains toward Mo Chit / Khu Khot (Sukhumvit Line, north) AND trains toward National Stadium (Silom Line, west)",
-          detail: "Both platforms on this level head AWAY from the river/south side of the city."
+          tag: "L4 · Upper",
+          direction: "↑ Northbound",
+          lines: "Sukhumvit → Mo Chit · Silom → Nat'l Stadium"
         },
         {
           level: 3,
-          label: "Lower platform (Level 3)",
-          serves: "Southbound: trains toward Bang Wa / Wongwian Yai (Silom Line, south) AND trains toward Bearing/Kheha (Sukhumvit Line, south)",
-          detail: "Both platforms on this level head TOWARD the river/south side of the city."
+          tag: "L3 · Lower",
+          direction: "↓ Southbound",
+          lines: "Sukhumvit → Bearing · Silom → Bang Wa"
         }
       ],
-      keyRule: "If you arrive on the Sukhumvit Line heading toward Khu Khot (north) and want to switch to Silom Line, you stay on the SAME level (Level 4) — just cross to the other side of the platform. But if you're heading toward Khu Khot and need a southbound Silom train, you must change levels via the stairs/escalators in the center concourse — you CANNOT just cross the platform.",
-      commonMistake: "Most people assume same-line transfers are same-level. At Siam it's the opposite: level is determined by direction (north vs south), not by which line you're on. A same-direction transfer (e.g. both northbound) is a simple cross-platform move. A direction change requires changing levels entirely."
+      watch: "Same direction = cross platform. Direction change = change levels."
     }
   },
   chitlom: {
@@ -170,10 +169,8 @@ function getRoute(fromKey, toKey) {
   } else if (fromKey === "siam") {
     steps.push({
       type: "transfer",
-      title: "Confirm your platform level at Siam first",
-      detail: goingNorth
-        ? "You want Sukhumvit Line northbound toward Mo Chit/Khu Khot — Level 4 (upper platform)."
-        : "You want Sukhumvit Line southbound toward Bearing/Kheha — Level 3 (lower platform)."
+      title: "Confirm your platform level",
+      detail: goingNorth ? "Take Level 4 (upper) — northbound." : "Take Level 3 (lower) — southbound."
     });
     steps.push({
       type: "ride",
@@ -188,8 +185,8 @@ function getRoute(fromKey, toKey) {
     });
     steps.push({
       type: "transfer",
-      title: "⚠ Siam is a level-change interchange",
-      detail: "If continuing on Sukhumvit Line in the same direction, stay on the same level — cross platform only. If switching to Silom Line in the opposite direction, you must change levels via the central stairs/escalators — you cannot just cross the platform."
+      title: "⚠ Siam: level = direction, not line",
+      detail: "Same direction → cross platform. Switching direction → change levels via central stairs."
     });
   } else if (crossesSiam) {
     steps.push({
