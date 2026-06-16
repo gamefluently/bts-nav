@@ -122,6 +122,72 @@
   }
   .go-btn:active { transform: scale(0.98); }
 
+  .line-strip {
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+    gap: 0;
+    padding: 14px 4px 18px;
+    margin-bottom: 4px;
+  }
+
+  .line-strip::-webkit-scrollbar { display: none; }
+
+  .strip-stop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 64px;
+    position: relative;
+  }
+
+  .strip-stop::before {
+    content: '';
+    position: absolute;
+    top: 13px;
+    left: -32px;
+    width: 64px;
+    height: 3px;
+    background: var(--green);
+    z-index: 0;
+  }
+
+  .strip-stop:first-child::before { display: none; }
+
+  .strip-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 3px solid var(--green);
+    z-index: 1;
+    margin-bottom: 6px;
+  }
+
+  .strip-stop.interchange .strip-dot {
+    border-color: var(--gold);
+    width: 14px;
+    height: 14px;
+  }
+
+  .strip-code {
+    font-family: 'Archivo', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .strip-stop.interchange .strip-code { color: var(--gold); }
+
+  .strip-name {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-align: center;
+    margin-top: 1px;
+    line-height: 1.2;
+  }
+
   /* Route line diagram */
   .route-line {
     position: relative;
@@ -295,6 +361,8 @@
     <div class="swap-btn" id="swapBtn">⇄</div>
     <select id="toSelect"></select>
   </div>
+
+  <div class="line-strip" id="lineStrip"></div>
 
   <button class="go-btn" id="goBtn">GET ROUTE</button>
 
