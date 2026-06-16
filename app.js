@@ -61,22 +61,20 @@ function renderInterchangeDiagram(station) {
   const ic = station.interchange;
   return `
     <div class="interchange-card">
-      <div class="label">Interchange logic — ${station.name}</div>
-      <p style="font-size:13px; color: var(--text-dim); line-height:1.5; margin-bottom: 4px;">
-        ${ic.summary}
-      </p>
+      <div class="label">${station.name} interchange</div>
+      <div class="ic-headline">${ic.headline}</div>
       <div class="levels">
         ${ic.levels.map((lvl, i) => `
           <div class="level-row ${i === 0 ? 'upper' : 'lower'}">
-            <span class="level-tag">${lvl.label}</span>
-            <p><strong style="color: var(--text);">Serves:</strong> ${lvl.serves}</p>
-            <p style="margin-top:4px;">${lvl.detail}</p>
+            <div class="level-top">
+              <span class="level-tag">${lvl.tag}</span>
+              <span class="level-dir">${lvl.direction}</span>
+            </div>
+            <p>${lvl.lines}</p>
           </div>
         `).join('')}
       </div>
-      <div class="key-rule">
-        <strong>Watch for this:</strong> ${ic.commonMistake}
-      </div>
+      <div class="key-rule">${ic.watch}</div>
     </div>
   `;
 }
