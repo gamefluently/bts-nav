@@ -19,6 +19,8 @@ function renderLineStrip() {
     `;
   }).join('');
 }
+
+function populateSelects() {
   LINE_ORDER.forEach(key => {
     const station = STATIONS[key];
     const label = `${station.code} · ${station.name}`;
